@@ -4,6 +4,9 @@ module.exports = {
     commonjs: true,
     es2021: true
   },
+  globals: {
+    Module: 'writable'
+  },
   extends: 'standard',
   overrides: [
   ],
