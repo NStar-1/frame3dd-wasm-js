@@ -9,20 +9,22 @@ if (!shell.which('emcc')) {
 const isEmrun = process.env.EMRUN
 
 const srcDir = 'src/'
-const f3ddDir = 'frame3dd/'
+const f3ddDir = '../frame3dd/'
 const f3ddSrcDir = f3ddDir + srcDir
 const buildDir = 'build/'
 const compileCmd =
-`emcc -g --pre-js ${srcDir}settings.js --post-js ${srcDir}post-settings.js \
--sEXPORTED_FUNCTIONS=_init,_set_point,_init_reactions,_set_element,_init_length,_set_gravity,\
-_init_point_loads,_set_point_load,_solve_model,_get_result,_get_context,_get_array \
--sEXPORTED_RUNTIME_METHODS=ccall,cwrap,getValue \
+`
+cd build/ && \
+emcc -c -g -sEXPORTED_FUNCTIONS=_init \
 ${f3ddSrcDir}main.c ${f3ddSrcDir}frame3dd.c ${f3ddSrcDir}eig.c ${f3ddSrcDir}HPGmatrix.c \
-${f3ddSrcDir}HPGutil.c ${f3ddSrcDir}NRutil.c ${f3ddSrcDir}frame3dd_io.c ${f3ddSrcDir}coordtrans.c \
-${f3ddSrcDir}gnuplot_writer.c ${f3ddSrcDir}struct_writer.c ${f3ddSrcDir}compat_types.c ${f3ddSrcDir}core.c \
-${srcDir}ems-binding.cpp -lembind \
--o ${buildDir}main.html \
---preload-file ${f3ddDir}examples/exA.3dd --emrun${isEmrun ? ' --emrun' : ''}`
+${f3ddSrcDir}HPGutil.c ${f3ddSrcDir}NRutil.c ${f3ddSrcDir}frame3dd_io.c \
+${f3ddSrcDir}coordtrans.c ${f3ddSrcDir}gnuplot_writer.c ${f3ddSrcDir}struct_writer.c \
+${f3ddSrcDir}compat_types.c ${f3ddSrcDir}core.c ../src/ems-interface.c && \
+emcc -r -sEXPORTED_FUNCTIONS=_init -o f3dd.o \
+main.o frame3dd.o eig.o HPGmatrix.o HPGutil.o NRutil.o frame3dd_io.o coordtrans.o \
+gnuplot_writer.o struct_writer.o compat_types.o core.o ems-interface.o && \
+emcc -lembind ../src/ems-binding.cpp
+`
 
 if (shell.test('-d', buildDir)) {
   shell.rm('-rf', buildDir)

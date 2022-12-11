@@ -4,7 +4,7 @@
   "description": "Wasm compilation configuration and Javascript bindings for Frame3dd project",
   "main": "index.js",
   "scripts": {
-    "pull": "node src/pull.js",
+    "clone": "node src/clone.js",
     "compile": "node src/compile.js",
     "serve": "emrun build/main.html",
     "test": "echo \"Error: no test specified\" && exit 1"

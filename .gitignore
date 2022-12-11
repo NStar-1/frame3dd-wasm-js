@@ -1,3 +1,5 @@
 node_modules/
 frame3dd/
 build/
+.ccls-cache/
+.session.vim
