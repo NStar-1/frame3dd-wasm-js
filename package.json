@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "clone": "node src/clone.js",
+    "postinstall": "npm run clone",
     "compile": "node src/compile.js",
     "serve": "emrun build/main.html",
     "test": "echo \"Error: no test specified\" && exit 1"
