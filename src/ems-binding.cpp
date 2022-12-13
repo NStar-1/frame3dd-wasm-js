@@ -22,7 +22,7 @@ struct buffer {
 };
 
 buffer get_array() {
-  static uint8_t arr[3] = {1, 2, 3};
+  static double arr[3] = {1, 2, 3};
   buffer buf;
 
   buf.pointer = (unsigned int) arr;
@@ -118,18 +118,32 @@ void finalize() {
 
 uint8_t solve_model() {
 	const RuntimeArgs args = {
-		.verbose = 1,
 		.overrides = {
 			.anlyz = 1
-		}
+		},
+		.verbose = 1
 	};
 	RS_init_for_IS(&rs, &iscope);
 	// 1 for Load Case #1
 	return solve(iscope, args, ctx, rs, 1);
 }
 
-ResultScope get_result() {
-	return rs;
+struct ResultScopeBuffer {
+  unsigned int K;
+  unsigned int R;
+  unsigned int D;
+  unsigned int Q;
+};
+
+ResultScopeBuffer get_result() {
+  const ResultScopeBuffer rsb = {
+    .K = (unsigned int) rs.K,
+    .R = (unsigned int) rs.R,
+    .D = (unsigned int) rs.D,
+    .Q = (unsigned int) rs.Q
+  };
+
+  return rsb;
 }
 
 SolverContext get_context() {
@@ -148,16 +162,39 @@ EMSCRIPTEN_BINDINGS(frame3dd_solve_binding) {
     ;
 
   value_array<buffer>("buffer")
-      .element(&buffer::pointer)
-      .element(&buffer::size)
-      ;
+    .element(&buffer::pointer)
+    .element(&buffer::size)
+    ;
+
+  value_object<Profile>("Profile")
+    .field("Ax", &Profile::Ax)
+    .field("Asy", &Profile::Asy)
+    .field("Asz", &Profile::Asz)
+    .field("Jx", &Profile::Jx)
+    .field("Iy", &Profile::Iy)
+    .field("Iz", &Profile::Iz)
+    ;
+
+  value_object<Material>("Material")
+    .field("density", &Material::density)
+    .field("E", &Material::E)
+    .field("G", &Material::G)
+    ;
+           
+  value_object<ResultScopeBuffer>("ResultScopeBuffer")
+    .field("K", &ResultScopeBuffer::K)
+    .field("R", &ResultScopeBuffer::R)
+    .field("D", &ResultScopeBuffer::D)
+    .field("Q", &ResultScopeBuffer::Q)
+    ;
 
   function("get_context", &get_context);
   function("get_array", &get_array);
   function("init", &init);
   function("set_point", &set_point, allow_raw_pointers());
   function("init_reactions", &init_reactions);
-  function("set_profile", &set_element);
+  function("set_material", &set_material);
+  function("set_profile", &set_profile);
   function("init_length", &init_length);
   function("set_gravity", &set_gravity);
   function("init_point_loads", &init_point_loads);
