@@ -61,8 +61,8 @@ const inputScopeJSON = {
     x: 0, y: 0, z: 0,
     isFixed: 1
   },{
-    id: 1,
-    x: 100, y: 0, z: 0,
+    id: 2,
+    x: 1000, y: 0, z: 0,
     isFixed: 0
   }],
   material: {
@@ -95,11 +95,14 @@ function calculate (inputScope) {
   points.forEach(point =>
     setPoint(point.id, createWasmArray([point.x, point.y, point.z], 'f64'), point.isFixed)
   )
-  initReactions()
+  let err;
+  err = initReactions();
+  console.error(err)
   Module.set_profile(profile)
   Module.set_material(material)
   setElement(element.id, element.startId, element.endId)
-  initLength()
+  err = initLength()
+  console.error(err)
   setGravity(gravity.x, gravity.y, gravity.z)
   initPointLoads(pointLoad.number)
   setPointLoad(pointLoad.id, createWasmArray(pointLoad.axial, 'f64'), createWasmArray(pointLoad.rotational, 'f64'))

@@ -17,21 +17,22 @@ SolverContext ctx = {
 };
 
 struct buffer {
-  unsigned int pointer;
-  unsigned int size;
+  uintptr_t pointer;
+  uint8_t size;
 };
 
 buffer get_array() {
   static double arr[3] = {1, 2, 3};
   buffer buf;
 
-  buf.pointer = (unsigned int) arr;
-  buf.size = 3;
+  buf.pointer = (uintptr_t) &arr;
+  buf.size = sizeof(uintptr_t);
   return buf;
 }
 
 uint8_t init(const uint16_t nN, const uint16_t nE) {
 	IS_set_nN(&iscope, nN);
+	IS_set_nR(&iscope, 1);
 	IS_set_nE(&iscope, nE);
 	IS_set_nL(&iscope, 1);
 	return 0;
@@ -46,8 +47,8 @@ void set_point(uint16_t id, double point[3], uint8_t is_fixed) {
     printf("test: %f", point[2]);
     printf("\n");
 	iscope.rj[id] = 0;
-	for (uint8_t i = 0; i < 6; i++) {
-		iscope.r[id * 6 + i] = is_fixed;
+	for (uint8_t i = 1; i <= 6; i++) {
+		iscope.r[(id) * 6 + i] = is_fixed;
 	}
 }
 
@@ -105,12 +106,13 @@ void init_point_loads(uint8_t number) {
 
 void set_point_load(uint8_t id, double axial[3], double rotational[3]) {
 	// 1 for load case #1
-	iscope.F_mech[1][6 * id + 0] = axial[0];
-	iscope.F_mech[1][6 * id + 1] = axial[1];
-	iscope.F_mech[1][6 * id + 2] = axial[2];
-	iscope.F_mech[1][6 * id + 3] = rotational[0];
-	iscope.F_mech[1][6 * id + 4] = rotational[1];
-	iscope.F_mech[1][6 * id + 5] = rotational[2];
+	const uint16_t ofst = 6 * (id - 1);
+	iscope.F_mech[1][ofst + 1] = axial[0];
+	iscope.F_mech[1][ofst + 2] = axial[1];
+	iscope.F_mech[1][ofst + 3] = axial[2];
+	iscope.F_mech[1][ofst + 4] = rotational[0];
+	iscope.F_mech[1][ofst + 5] = rotational[1];
+	iscope.F_mech[1][ofst + 6] = rotational[2];
 }
 
 void finalize() {
@@ -118,20 +120,39 @@ void finalize() {
 
 uint8_t solve_model() {
 	const RuntimeArgs args = {
-		.overrides = {
-			.anlyz = 1
-		},
-		.verbose = 1
+		.verbose = 1,
+		.axial_sign = 1,
+		.overrides = { -1 }
 	};
+
+	// TODO should be derived from args/overrides
+	iscope.anlyz = 1;
+	iscope.lump = 1;
+	iscope.geom = 1;
+	iscope.pan = 1;
+	iscope.scale = 2.5;
+	iscope.dx = 10;
+	iscope.exagg_static = 5;
+	iscope.exagg_modal = 10;
+	iscope.tol = 1.0e-9;
 	RS_init_for_IS(&rs, &iscope);
+    printf("\nD1 = ");
+
 	// 1 for Load Case #1
-	return solve(iscope, args, ctx, rs, 1);
+	solve(iscope, args, ctx, rs, 1);
+
+    printf("\nD = ");
+    for (uint16_t i = 1; i <= 12; i++) {
+        printf("%.2f ", rs.D[i]);
+    }
+
+    return 0;
 }
 
 struct ResultScopeBuffer {
   unsigned int K;
   unsigned int R;
-  unsigned int D;
+  uintptr_t D;
   unsigned int Q;
 };
 
@@ -139,7 +160,7 @@ ResultScopeBuffer get_result() {
   const ResultScopeBuffer rsb = {
     .K = (unsigned int) rs.K,
     .R = (unsigned int) rs.R,
-    .D = (unsigned int) rs.D,
+    .D = (uintptr_t) &rs.D,
     .Q = (unsigned int) rs.Q
   };
 
