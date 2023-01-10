@@ -52,6 +52,17 @@ void set_point(uint16_t id, double point[3], uint8_t is_fixed) {
 	}
 }
 
+
+void mset_point(uint16_t id, vec3 point, uint8_t is_fixed) {
+	iscope.xyz[id].x = point.x;
+	iscope.xyz[id].y = point.y;
+	iscope.xyz[id].z = point.z;
+	iscope.rj[id] = 0;
+	for (uint8_t i = 1; i <= 6; i++) {
+		iscope.r[(id - 1) * 6 + i] = is_fixed;
+	}
+}
+
 uint8_t init_reactions() {
 	Error *error = NULL;
 	error = IS_init_reactions(&iscope);
@@ -115,6 +126,18 @@ void set_point_load(uint8_t id, double axial[3], double rotational[3]) {
 	iscope.F_mech[1][ofst + 6] = rotational[2];
 }
 
+
+void mset_point_load(uint8_t id, vec3 axial, vec3 rotational) {
+	// 1 for load case #1
+	const uint16_t ofst = 6 * (id - 1);
+	iscope.F_mech[1][ofst + 1] = axial.x;
+	iscope.F_mech[1][ofst + 2] = axial.y;
+	iscope.F_mech[1][ofst + 3] = axial.z;
+	iscope.F_mech[1][ofst + 4] = rotational.x;
+	iscope.F_mech[1][ofst + 5] = rotational.y;
+	iscope.F_mech[1][ofst + 6] = rotational.z;
+}
+
 void finalize() {
 }
 
@@ -170,6 +193,66 @@ ResultScopeBuffer get_result() {
 SolverContext get_context() {
 	return ctx;
 }
+} // extern c
+
+void write_rs() {
+	FILE *fd;
+	fd = fopen("D", "wb");
+	fwrite(rs.D + 1, sizeof(*rs.D), iscope.DoF, fd);
+	fclose(fd);
+
+	fd = fopen("R", "wb");
+	fwrite(rs.R + 1, sizeof(*rs.R), iscope.DoF, fd);
+	fclose(fd);
+
+	fd = fopen("Q", "wb");
+	for (uint16_t i = 1 ; i <= iscope.nE; i++)
+		fwrite(rs.Q[i] + 1, sizeof(*rs.R), 12, fd);
+	fclose(fd);
+}
+
+int my_calc() {
+	uint8_t err = 0;
+	init(2, 1);
+	vec3 point1 = {0};
+	mset_point(1, point1, 1);
+	vec3 point2 = {1000, 0, 0};
+	mset_point(2, point2, 0);
+	err = init_reactions();
+	if (err) {
+		printf("Init reactions, code: %d\n", err);
+	}
+	const Profile profile = {
+		.Ax  = 40.1,
+		.Asy = 21.3,
+		.Asz = 21.3,
+		.Jx  = 746,
+		.Iy  = 373,
+		.Iz  = 373,
+	};
+	set_profile(profile);
+	const Material material = {
+		.density = 2.78e-9,
+		.E = 731000,
+		.G = 280000,
+	};
+	set_material(material);
+	set_element(1, 1, 2);
+	err = init_length();
+	if (err) {
+		printf("Init length, code: %d\n", err);
+	}
+	set_gravity(0, 0, 0);
+	init_point_loads(1);
+	const vec3 rot_load = {0};
+	const vec3 axial_load = {0, -10, 0};
+	mset_point_load(2, axial_load, rot_load);
+	err = solve_model();
+	if (err) {
+		printf("Solver error, code: %d\n", err);
+	}
+	write_rs();
+	return 0;
 }
 
 using namespace emscripten;
@@ -222,5 +305,6 @@ EMSCRIPTEN_BINDINGS(frame3dd_solve_binding) {
   function("set_point_load", &set_point_load, allow_raw_pointers());
   function("finalize", &finalize);
   function("solve_model", &solve_model);
+  function("my_calc", &my_calc);
   function("get_result", &get_result);
 }
