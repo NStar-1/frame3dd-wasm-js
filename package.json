@@ -2,7 +2,7 @@
   "name": "frame3dd-wasm-js",
   "version": "0.0.1",
   "description": "Wasm compilation configuration and Javascript bindings for Frame3dd project",
-  "main": "index.js",
+  "main": "build/main.js",
   "scripts": {
     "clone": "node src/clone.js",
     "postinstall": "npm run clone",
