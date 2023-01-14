@@ -42,13 +42,9 @@ void set_point(uint16_t id, double point[3], uint8_t is_fixed) {
 	iscope.xyz[id].x = point[0];
 	iscope.xyz[id].y = point[1];
 	iscope.xyz[id].z = point[2];
-    printf("test: %f", point[0]);
-    printf("test: %f", point[1]);
-    printf("test: %f", point[2]);
-    printf("\n");
 	iscope.rj[id] = 0;
 	for (uint8_t i = 1; i <= 6; i++) {
-		iscope.r[(id) * 6 + i] = is_fixed;
+		iscope.r[(id - 1) * 6 + i] = is_fixed;
 	}
 }
 
@@ -141,6 +137,22 @@ void mset_point_load(uint8_t id, vec3 axial, vec3 rotational) {
 void finalize() {
 }
 
+void write_rs() {
+	FILE *fd;
+	fd = fopen("D", "wb");
+	fwrite(rs.D + 1, sizeof(*rs.D), iscope.DoF, fd);
+	fclose(fd);
+
+	fd = fopen("R", "wb");
+	fwrite(rs.R + 1, sizeof(*rs.R), iscope.DoF, fd);
+	fclose(fd);
+
+	fd = fopen("Q", "wb");
+	for (uint16_t i = 1 ; i <= iscope.nE; i++)
+		fwrite(rs.Q[i] + 1, sizeof(*rs.R), 12, fd);
+	fclose(fd);
+}
+
 uint8_t solve_model() {
 	const RuntimeArgs args = {
 		.verbose = 1,
@@ -169,6 +181,8 @@ uint8_t solve_model() {
         printf("%.2f ", rs.D[i]);
     }
 
+	write_rs();
+
     return 0;
 }
 
@@ -194,22 +208,6 @@ SolverContext get_context() {
 	return ctx;
 }
 } // extern c
-
-void write_rs() {
-	FILE *fd;
-	fd = fopen("D", "wb");
-	fwrite(rs.D + 1, sizeof(*rs.D), iscope.DoF, fd);
-	fclose(fd);
-
-	fd = fopen("R", "wb");
-	fwrite(rs.R + 1, sizeof(*rs.R), iscope.DoF, fd);
-	fclose(fd);
-
-	fd = fopen("Q", "wb");
-	for (uint16_t i = 1 ; i <= iscope.nE; i++)
-		fwrite(rs.Q[i] + 1, sizeof(*rs.R), 12, fd);
-	fclose(fd);
-}
 
 int my_calc() {
 	uint8_t err = 0;
@@ -251,7 +249,6 @@ int my_calc() {
 	if (err) {
 		printf("Solver error, code: %d\n", err);
 	}
-	write_rs();
 	return 0;
 }
 

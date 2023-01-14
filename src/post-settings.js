@@ -58,18 +58,29 @@ const inputScopeJSON = {
   nE: 1,
   points: [{
     id: 1,
-    x: 0, y: 0, z: 0,
+    x: 0,
+    y: 0,
+    z: 0,
     isFixed: 1
-  },{
+  }, {
     id: 2,
-    x: 1000, y: 0, z: 0,
+    x: 1000,
+    y: 0,
+    z: 0,
     isFixed: 0
   }],
   material: {
-    density: 7.33e-7, E: 29000, G: 11500 
+    density: 2.78e-9,
+    E: 731000,
+    G: 280000
   },
   profile: {
-    Ax: 10, Asy: 1, Asz: 1, Jx: 1, Iy: 1, Iz: .01
+    Ax: 40.1,
+    Asy: 21.3,
+    Asz: 21.3,
+    Jx: 746,
+    Iy: 373,
+    Iz: 373
   },
   element: {
     id: 1,
@@ -77,40 +88,75 @@ const inputScopeJSON = {
     endId: 2
   },
   gravity: {
-    x: 0, y: -9.8, z: 0
+    x: 0, y: 0, z: 0
   },
   pointLoad: {
     number: 1,
-    id: 1,
-    axial: [0, 10, 0],
+    id: 2,
+    axial: [0, -10, 0],
     rotational: [0, 0, 0]
   }
+}
+
+function readFile (name) {
+  const a = Module.FS.readFile(name)
+  return new Float64Array(a.buffer)
 }
 
 function calculate (inputScope) {
   const {
     nN, nE, points, material, profile, element, gravity, pointLoad
   } = inputScope
+
   init(nN, nE)
+
   points.forEach(point =>
     setPoint(point.id, createWasmArray([point.x, point.y, point.z], 'f64'), point.isFixed)
   )
-  let err;
-  err = initReactions();
-  console.error(err)
+
+  let err
+
+  err = initReactions()
+  if (err > 0) console.error(`Init reactipns error, code: ${err}`)
+
   Module.set_profile(profile)
   Module.set_material(material)
   setElement(element.id, element.startId, element.endId)
+
   err = initLength()
-  console.error(err)
+  if (err) console.error(`Init length errro, code: ${err}`)
+
   setGravity(gravity.x, gravity.y, gravity.z)
   initPointLoads(pointLoad.number)
   setPointLoad(pointLoad.id, createWasmArray(pointLoad.axial, 'f64'), createWasmArray(pointLoad.rotational, 'f64'))
-  solveModel()
+
+  err = solveModel()
+  if (err) console.log(`Solver error, code: ${err}`)
+
+  const transformResult = (arr) => {
+    let counter = 0
+    let groupIndex = 0
+    const mapping = ['x', 'y', 'z', 'xx', 'yy', 'zz']
+    return arr.reduce((res, curr, index) => {
+      const key = mapping[counter++]
+      res[groupIndex][key] = curr
+      if (counter === 6 && index < arr.length - 1) {
+        counter = 0
+        groupIndex++
+        res.push({})
+      }
+      return res
+    }, [{}])
+  }
 
   return {
-    result: Module.get_result(),
-    context: Module.get_context()
+    resultPtrs: Module.get_result(),
+    context: Module.get_context(),
+    result: {
+      D: transformResult(readFile('D')),
+      R: transformResult(readFile('R')),
+      Q: readFile('Q')
+    }
   }
 }
 
@@ -130,6 +176,7 @@ if (!window.Frame3dd) {
     getContext,
     getArray,
     calculate,
-    inputScopeJSON
+    inputScopeJSON,
+    readFile
   }
 }
