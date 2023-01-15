@@ -22,11 +22,7 @@ const setPointLoad = Module.cwrap('set_point_load', null, [
   'number',
   'number'
 ])
-const finalize = Module.cwrap('finalize', null)
 const solveModel = Module.cwrap('solve_model', 'number')
-const getResult = Module.cwrap('get_result', 'number')
-const getContext = Module.cwrap('get_context', 'number')
-const getArray = Module.cwrap('get_array', 'number')
 
 function createWasmArray (array, type) {
   let buf
@@ -104,13 +100,9 @@ function readFile (name) {
 }
 
 function calculate (inputScope) {
-  const {
-    nN, nE, points, material, profile, element, gravity, pointLoad
-  } = inputScope
+  init(inputScope.nN, inputScope.nE)
 
-  init(nN, nE)
-
-  points.forEach(point =>
+  inputScope.points.forEach(point =>
     setPoint(point.id, createWasmArray([point.x, point.y, point.z], 'f64'), point.isFixed)
   )
 
@@ -119,16 +111,16 @@ function calculate (inputScope) {
   err = initReactions()
   if (err > 0) console.error(`Init reactipns error, code: ${err}`)
 
-  Module.set_profile(profile)
-  Module.set_material(material)
-  setElement(element.id, element.startId, element.endId)
+  Module.set_profile(inputScope.profile)
+  Module.set_material(inputScope.material)
+  setElement(inputScope.element.id, inputScope.element.startId, inputScope.element.endId)
 
   err = initLength()
   if (err) console.error(`Init length errro, code: ${err}`)
 
-  setGravity(gravity.x, gravity.y, gravity.z)
-  initPointLoads(pointLoad.number)
-  setPointLoad(pointLoad.id, createWasmArray(pointLoad.axial, 'f64'), createWasmArray(pointLoad.rotational, 'f64'))
+  setGravity(inputScope.gravity.x, inputScope.gravity.y, inputScope.gravity.z)
+  initPointLoads(inputScope.pointLoad.number)
+  setPointLoad(inputScope.pointLoad.id, createWasmArray(inputScope.pointLoad.axial, 'f64'), createWasmArray(inputScope.pointLoad.rotational, 'f64'))
 
   err = solveModel()
   if (err) console.log(`Solver error, code: ${err}`)
@@ -150,7 +142,6 @@ function calculate (inputScope) {
   }
 
   return {
-    resultPtrs: Module.get_result(),
     context: Module.get_context(),
     result: {
       D: transformResult(readFile('D')),
@@ -162,21 +153,7 @@ function calculate (inputScope) {
 
 if (!window.Frame3dd) {
   window.Frame3dd = {
-    init,
-    setPoint,
-    initReactions,
-    setElement,
-    initLength,
-    setGravity,
-    initPointLoads,
-    setPointLoad,
-    finalize,
-    solveModel,
-    getResult,
-    getContext,
-    getArray,
     calculate,
-    inputScopeJSON,
-    readFile
+    inputScopeJSON
   }
 }
