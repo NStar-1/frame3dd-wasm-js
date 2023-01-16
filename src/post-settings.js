@@ -151,6 +151,9 @@ function calculate (inputScope) {
   }
 }
 
+Module.calculate = calculate;
+Module.inputScopeJSON = inputScopeJSON;
+
 if (!window.Frame3dd) {
   window.Frame3dd = {
     calculate,
