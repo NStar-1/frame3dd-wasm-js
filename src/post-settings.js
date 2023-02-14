@@ -111,7 +111,7 @@ function calculate (inputScope) {
   for (let i = 0; i < inputScope.points.length - 1; i++) {
     const startId = inputScope.points[i].id
     const endId = inputScope.points[i + 1].id
-    setElement(i, startId, endId)
+    setElement(i + 1, startId, endId)
   }
 
   err = initLength()
