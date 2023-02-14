@@ -86,12 +86,11 @@ const inputScopeJSON = {
   gravity: {
     x: 0, y: 0, z: 0
   },
-  pointLoad: {
-    number: 1,
+  pointLoads: [{
     id: 2,
     axial: [0, -10, 0],
     rotational: [0, 0, 0]
-  }
+  }]
 }
 
 function readFile (name) {
@@ -109,18 +108,20 @@ function calculate (inputScope) {
   let err
 
   err = initReactions()
-  if (err > 0) console.error(`Init reactipns error, code: ${err}`)
+  if (err > 0) console.error(`Init reactions error, code: ${err}`)
 
   Module.set_profile(inputScope.profile)
   Module.set_material(inputScope.material)
   setElement(inputScope.element.id, inputScope.element.startId, inputScope.element.endId)
 
   err = initLength()
-  if (err) console.error(`Init length errro, code: ${err}`)
+  if (err) console.error(`Init length error, code: ${err}`)
 
   setGravity(inputScope.gravity.x, inputScope.gravity.y, inputScope.gravity.z)
-  initPointLoads(inputScope.pointLoad.number)
-  setPointLoad(inputScope.pointLoad.id, createWasmArray(inputScope.pointLoad.axial, 'f64'), createWasmArray(inputScope.pointLoad.rotational, 'f64'))
+  initPointLoads(inputScope.pointLoads.length)
+  inputScope.pointLoads.forEach(pointLoad => {
+    setPointLoad(pointLoad.id, createWasmArray(pointLoad.axial, 'f64'), createWasmArray(pointLoad.rotational, 'f64'))
+  })
 
   err = solveModel()
   if (err) console.log(`Solver error, code: ${err}`)
@@ -151,8 +152,8 @@ function calculate (inputScope) {
   }
 }
 
-Module.calculate = calculate;
-Module.inputScopeJSON = inputScopeJSON;
+Module.calculate = calculate
+Module.inputScopeJSON = inputScopeJSON
 
 if (!window.Frame3dd) {
   window.Frame3dd = {
