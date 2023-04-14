@@ -65,6 +65,11 @@ const inputScopeJSON = {
     z: 0,
     isFixed: 0
   }],
+  elements: [{
+    id: 1,
+    from: 1,
+    to: 2,
+  }],
   material: {
     density: 2.78e-9,
     E: 731000,
@@ -108,11 +113,9 @@ function calculate (inputScope) {
   Module.set_profile(inputScope.profile)
   Module.set_material(inputScope.material)
 
-  for (let i = 0; i < inputScope.points.length - 1; i++) {
-    const startId = inputScope.points[i].id
-    const endId = inputScope.points[i + 1].id
-    setElement(i + 1, startId, endId)
-  }
+  inputScope.elements.forEach((d) => {
+    setElement(d.id, d.from, d.to);
+  })
 
   err = initLength()
   if (err) console.error(`Init length error, code: ${err}`)

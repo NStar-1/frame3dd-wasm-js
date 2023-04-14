@@ -2,6 +2,9 @@ export = Frame3ddLoader;
 
 declare async function Frame3ddLoader(): Promise<F3DD.Module>;
 
+inputScopeJSON
+calculate(inputScope)
+
 declare namespace F3DD {
   export interface Module {
     calculate: (inputScope: InputScope) => ResultScope;
@@ -12,13 +15,14 @@ declare namespace F3DD {
     /**
      * Total number of nodes
      */
-    nN: number;
+    nN: string;
 
     /**
      * Total number of elements (edges)
      */
     nE: number;
     points: Array<Point>;
+    elements: Array<Element>,
     material: Material;
     profile: Profile;
     gravity: Vec3;
@@ -57,8 +61,20 @@ declare namespace F3DD {
     /**
      * 1 means node is static
      */
-    isFixed: 1 | 0;
+    isFixed: 1 | 0; // enum fixed, ball joint vec[6]
   };
+
+  type Element = {
+    id: number;
+    /**
+     * An ID of the first node
+     */
+    from: number;
+    /**
+     * An ID of the second node
+     */
+    to: number;
+  }
 
   type Material = {
     density: number;
