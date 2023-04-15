@@ -16,9 +16,10 @@ SolverContext ctx = {
   .iter = 0
 };
 
-uint8_t init(const uint16_t nN, const uint16_t nE) {
+uint8_t init(const uint16_t nN, const uint16_t nE, const uint16_t nR) {
+  printf("nN: %d, nE: %d, nR: %d\n", nN, nE, nR);
   IS_set_nN(&iscope, nN);
-  IS_set_nR(&iscope, 1);
+  IS_set_nR(&iscope, nR);
   IS_set_nE(&iscope, nE);
   IS_set_nL(&iscope, 1);
   return 0;
@@ -29,6 +30,7 @@ void set_point(uint16_t id, double point[3], uint8_t is_fixed) {
   iscope.xyz[id].y = point[1];
   iscope.xyz[id].z = point[2];
   iscope.rj[id] = 0;
+  printf("ID %d, fixed?: %d\n", id, is_fixed);
   for (uint8_t i = 1; i <= 6; i++) {
       iscope.r[(id - 1) * 6 + i] = is_fixed;
   }
@@ -115,9 +117,9 @@ void write_rs() {
 
 uint8_t solve_model() {
   const RuntimeArgs args = {
-      .verbose = 1,
+      .overrides = { -1 },
       .axial_sign = 1,
-      .overrides = { -1 }
+      .verbose = 1,
   };
 
   // TODO: should be derived from args/overrides
@@ -135,11 +137,14 @@ uint8_t solve_model() {
 
   // 1 for Load Case #1
   solve(iscope, args, ctx, rs, 1);
+  printf("TESTX\n");
 
   printf("\nD = ");
   for (uint16_t i = 1; i <= 12; i++) {
-      printf("%.2f ", rs.D[i]);
+    
+      printf("| %.2f ", rs.D[i]);
   }
+  printf("\n");
 
   write_rs();
 

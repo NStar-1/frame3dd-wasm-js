@@ -1,4 +1,4 @@
-const init = Module.cwrap('init', 'number', ['number', 'number'])
+const init = Module.cwrap('init', 'number', ['number', 'number', 'number'])
 const setPoint = Module.cwrap('set_point', null, [
   'number',
   'number',
@@ -50,8 +50,6 @@ function createWasmArray (array, type) {
   return buf
 }
 const inputScopeJSON = {
-  nN: 2,
-  nE: 1,
   points: [{
     id: 1,
     x: 0,
@@ -60,6 +58,12 @@ const inputScopeJSON = {
     isFixed: 1
   }, {
     id: 2,
+    x: 500,
+    y: 0,
+    z: 0,
+    isFixed: 0
+  }, {
+    id: 3,
     x: 1000,
     y: 0,
     z: 0,
@@ -69,6 +73,10 @@ const inputScopeJSON = {
     id: 1,
     from: 1,
     to: 2,
+  }, {
+    id: 2,
+    from: 2,
+    to: 3,
   }],
   material: {
     density: 2.78e-9,
@@ -99,7 +107,10 @@ function readFile (name) {
 }
 
 function calculate (inputScope) {
-  init(inputScope.nN, inputScope.nE)
+  // Retrained nodes count
+  const restainedNodes = inputScope.points.filter((d) => d.isFixed > 0)
+  const nR = restainedNodes.length;
+  init(inputScope.points.length, inputScope.elements.length, nR)
 
   inputScope.points.forEach(point =>
     setPoint(point.id, createWasmArray([point.x, point.y, point.z], 'f64'), point.isFixed)
