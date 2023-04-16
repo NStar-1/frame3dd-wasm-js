@@ -124,7 +124,7 @@ function readFile(name) {
 
 function calculate(inputScope) {
   // Retrained nodes count
-  const restainedNodes = inputScope.points.filter((d) => d.reactions.any());
+  const restainedNodes = inputScope.points.filter((d) => d.reactions.some((d) => d));
   const nR = restainedNodes.length;
   init(inputScope.points.length, inputScope.elements.length, nR);
 
