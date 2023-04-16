@@ -25,15 +25,19 @@ uint8_t init(const uint16_t nN, const uint16_t nE, const uint16_t nR) {
   return 0;
 }
 
-void set_point(uint16_t id, double point[3], uint8_t is_fixed) {
+void set_point(uint16_t id, double point[3], bool r1, bool r2, bool r3, bool r4, bool r5, bool r6) {
   iscope.xyz[id].x = point[0];
   iscope.xyz[id].y = point[1];
   iscope.xyz[id].z = point[2];
   iscope.rj[id] = 0;
-  printf("ID %d, fixed?: %d\n", id, is_fixed);
-  for (uint8_t i = 1; i <= 6; i++) {
-      iscope.r[(id - 1) * 6 + i] = is_fixed;
-  }
+  //printf("ID %d, fixed?: %d\n", id, is_fixed);
+  const uint8_t ofst = (id - 1) * 6;
+  iscope.r[ofst + 1] = r1;
+  iscope.r[ofst + 2] = r2;
+  iscope.r[ofst + 3] = r3;
+  iscope.r[ofst + 4] = r4;
+  iscope.r[ofst + 5] = r5;
+  iscope.r[ofst + 6] = r6;
 }
 
 uint8_t init_reactions() {

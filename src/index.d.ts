@@ -47,9 +47,16 @@ export declare namespace F3DD {
      */
     id: number;
     /**
-     * 1 means node is static
+     * fixation type for 6 DoF. true - fixed, false - free
      */
-    isFixed: 1 | 0; // enum fixed, ball joint vec[6]
+    reactions: [
+      x: boolean,
+      y: boolean,
+      z: boolean,
+      xx: boolean,
+      yy: boolean,
+      zz: boolean,
+    ]
   };
 
   type FrameElement = {

@@ -1,6 +1,6 @@
 {
   "name": "frame3dd-wasm-js",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Wasm compilation configuration and Javascript bindings for Frame3dd project",
   "main": "build/index.mjs",
   "types": "src/index.d.ts",
